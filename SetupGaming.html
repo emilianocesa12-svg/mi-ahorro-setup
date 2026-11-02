@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi ahorro Setup Gaming</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #101820;
+  color: white;
+  padding: 15px;
+  margin: 0;
+  text-align: center;
+}
+
+h1 { color: #35d07f; }
+
+.summary {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #1c2b38;
+  padding: 12px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px #0008;
+}
+
+.summary h2 {
+  margin: 5px;
+}
+
+#saved {
+  color: #35d07f;
+  font-size: 27px;
+  margin: 8px;
+  font-weight: bold;
+}
+
+#progress {
+  background: #354653;
+  height: 13px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+#bar {
+  background: #35d07f;
+  height: 100%;
+  width: 0%;
+  transition: width .3s;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.cell {
+  background: #263746;
+  border: 2px solid #526477;
+  border-radius: 9px;
+  padding: 12px 3px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cell.done {
+  background: #145333;
+  border-color: #35d07f;
+}
+
+small {
+  display: block;
+  color: #b8c7d4;
+  margin-bottom: 5px;
+}
+
+button {
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #35d07f;
+  margin: 20px 0;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 SETUP GAMING 🎮</h1>
+
+<div class="summary">
+
+<h2>Meta: $29,299</h2>
+
+<p>Dinero ahorrado:</p>
+<div id="saved">$0</div>
+
+<div id="progress">
+  <div id="bar"></div>
+</div>
+
+<h2 id="percent">0%</h2>
+
+<p id="count">0 / 100 casillas</p>
+
+<p id="status">💾 Guardado automático</p>
+
+</div>
+
+<h2>🍀 Mis 100 casillas</h2>
+
+<div class="grid" id="grid"></div>
+
+<button onclick="resetTable()">
+Reiniciar a $0
+</button>
+
+<script>
+
+const amounts = [
+20,30,50,100,150,200,300,500,700,950,
+
+...Array(30).fill(200),
+...Array(30).fill(300),
+...Array(28).fill(377),
+365,366
+];
+
+const TARGET = 29299;
+const STORAGE_KEY = "setupGamingProgressV2";
+
+let checked = new Set();
+
+try {
+  const stored = localStorage.getItem(STORAGE_KEY);
+
+  if (stored !== null) {
+    const data = JSON.parse(stored);
+
+    if (Array.isArray(data)) {
+      checked = new Set(
+        data.filter(i =>
+          Number.isInteger(i) && i >= 0 && i < 100
+        )
+      );
+    }
+  }
+} catch {
+  checked = new Set();
+}
+
+const grid = document.getElementById("grid");
+
+function saveProgress() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([...checked])
+    );
+
+    document.getElementById("status").textContent =
+      "💾 ¡Progreso guardado!";
+  } catch {
+    document.getElementById("status").textContent =
+      "⚠️ No se pudo guardar";
+  }
+}
+
+function update() {
+
+  let total = 0;
+  grid.innerHTML = "";
+
+  amounts.forEach((amount, i) => {
+
+    const cell = document.createElement("div");
+
+    cell.className = "cell" +
+      (checked.has(i) ? " done" : "");
+
+    cell.innerHTML =
+      `<small>#${i+1}</small>
+       <strong>$${amount.toLocaleString("es-MX")}</strong>`;
+
+    cell.onclick = () => {
+
+      if (checked.has(i)) {
+        checked.delete(i);
+      } else {
+        checked.add(i);
+      }
+
+      saveProgress();
+      update();
+    };
+
+    if (checked.has(i)) total += amount;
+
+    grid.appendChild(cell);
+  });
+
+  const percent = total / TARGET * 100;
+
+  document.getElementById("saved").textContent =
+    "$" + total.toLocaleString("es-MX");
+
+  document.getElementById("percent").textContent =
+    percent.toFixed(1) + "% completado";
+
+  document.getElementById("count").textContent =
+    checked.size + " / 100 casillas";
+
+  document.getElementById("bar").style.width =
+    Math.min(100, percent) + "%";
+}
+
+function resetTable() {
+
+  if (!confirm("¿Quieres reiniciar todo a $0?")) {
+    return;
+  }
+
+  checked.clear();
+  saveProgress();
+  update();
+}
+
+update();
+
+</script>
+
+</body>
+</html>
